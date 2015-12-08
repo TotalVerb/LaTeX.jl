@@ -60,6 +60,8 @@ type Code
     code
 end
 
+include("mathmode.jl")
+
 # declarations: non-displayed items controlling document metadata
 abstract AbstractDecl
 

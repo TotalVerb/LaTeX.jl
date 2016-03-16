@@ -69,6 +69,14 @@ type Exponent
     expt
 end
 
+type LaTeXVector
+    v::Vector
+end
+
+type LaTeXMatrix
+    m::Matrix
+end
+
 function processitem(p, fc::PrefixOperator, indent)
     r = []
     if haskey(BUILTIN_FN, fc.head)
@@ -130,6 +138,33 @@ function processitem(p, ex::Exponent, indent)
     push!(r, "}")
 end
 
+function processitem(p, v::LaTeXVector, indent)
+    r = Any["{\\left["]
+    for (i, x) in enumerate(v.v)
+        if i != 1
+            push!(r, processitem(p, ",", indent))
+        end
+        push!(r, processitem(p, x, indent))
+    end
+    push!(r, "\\right]}")
+end
+
+function processitem(p, m::LaTeXMatrix, indent)
+    r = Any["{\\begin{bmatrix}"]
+    for i in 1:size(m.m, 1)
+        if i != 1
+            push!(r, processitem(p, "\\\\", indent))
+        end
+        for j in 1:size(m.m, 2)
+            if j != 1
+                push!(r, processitem(p, "&", indent))
+            end
+            push!(r, processitem(p, m.m[i, j], indent))
+        end
+    end
+    push!(r, "\\end{bmatrix}}")
+end
+
 processitem(p, i::Integer, indent) = string(i)
 
 function texify_call(fn, args)
@@ -181,11 +216,14 @@ texify_math(ex::Symbol) =
     : ex ∈ [:π, :pi]   ? "\\pi"
     : string(ex))
 
+texify_math(v::Vector) = LaTeXVector(map(texify_math, v))
+texify_math(m::Matrix) = LaTeXMatrix(map(texify_math, m))
+
 """
 Texify a Julia expression into a LaTeX math-mode structure, then wrap it in the
 specified kind of wrapper (one of `:equation`, `:inline`, and `:none`).
 """
-function texify(ex::Expr, as::Symbol=:equation)
+function texify(ex, as::Symbol=:equation)
     if as == :equation
         AMSEquation(texify_math(ex))
     elseif as == :inline

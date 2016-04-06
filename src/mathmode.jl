@@ -13,7 +13,6 @@ BUILTIN_FN = Dict(
     :arccot => "arccot",
     :arcsec => "arcsec",
     :arccsc => "arccsc",
-    :ln => "ln",
     :log => "log")
 
 # math wrappers
@@ -196,14 +195,23 @@ function texify_call(fn, args)
     end
 end
 
+function row_to_row_vector(row::Expr)
+    @assert row.head == :row
+    row.args'
+end
+
 """
-Texify a Julia expression into a LaTeX math-mode structure.
+TeXify a Julia expression into a LaTeX math-mode structure.
 """
 function texify_math(ex::Expr)
     if ex.head == :call
         texify_call(ex.args[1], ex.args[2:end])
     elseif ex.head == :block
         filter(x -> x ≠ nothing, map(texify_math, ex.args))
+    elseif ex.head == :vect
+        texify_math(ex.args)
+    elseif ex.head == :vcat  # matrix
+        texify_math(vcat(map(row_to_row_vector, ex.args)...))
     elseif ex.head == :(=)
         InfixOperator("=", map(texify_math, ex.args))
     end

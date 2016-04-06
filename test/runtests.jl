@@ -2,6 +2,9 @@ using LaTeX
 import LaTeX: getrequirements
 using Base.Test
 
+# Math tests
+@test LaTeX.texify(1) == LaTeX.AMSEquation(1)
+
 # Check that package dependency is working
 @test haskey(
     getrequirements(Section("Code", [Code("""test_getrequirements()""")])),
